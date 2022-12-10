@@ -11,4 +11,6 @@ router.post('/', companyController.insert );
 
 router.delete('/:id', companyController.destroy );
 
+router.put('/:id', companyController.update );
+
 module.exports = router;

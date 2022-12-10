@@ -42,7 +42,9 @@ exports.index = async (req, res, next) => {  //Show all
 
     try{
          const {address, name} = req.body
-         let company = new Company({address,name})
+         let company = new Company({
+          address:address,
+          name:name})
          await company.save()
 
          res.status(200).json({
