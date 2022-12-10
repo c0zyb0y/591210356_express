@@ -4,9 +4,10 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 const mongoose = require('mongoose');
 
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var companyRouter = require('./routes/company');
+const indexRouter = require('./routes/index');
+const usersRouter = require('./routes/users');
+const companyRouter = require('./routes/company');
+const staffRouter = require('./routes/staff');
 
 var app = express();
 
@@ -21,5 +22,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/company',companyRouter);
+app.use('/staff',staffRouter);
 
 module.exports = app;
