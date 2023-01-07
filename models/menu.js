@@ -1,21 +1,25 @@
-const mongoose=require('mongoose')
-const schema = mongoose.Schema
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
 
+const menuSchema = new Schema(
+  {
+    name: { type: String, requied: true, trim: true },
+    price: { type: Number },
+    shopId: { type: Schema.Types.ObjectId, ref: "Shop" },
+  },
+  {
+    timestamps: true,
+    virtuals: {
+      price_vat: {
+        get() {
+          return this.price * 1.07;
+        },
+      },
+    },
+    toJSON: { virtuals: true },
+  }
+);
 
-const Schema = new Schema({
+const menu = mongoose.model("Menu", menuSchema, "menus");
 
-   name: {type: String,require: true,trim:true},
-   price:{type:Number, default: 100},
-   shop: {type: Schema.Types.OpjectId, ref:'Shops'}
-
-//   createdAt: {type: Date, default:Date.now},
-//   updateAt: {type: Date, default:Date.now}
-},{ toJSON: { virtuals: true }, collection: 'menus', timestamps: true });
-
-schema.virtual('price_vat').get(function(){
-    return(this.price*1.07)+this.price
-})
-
-const menu = mongoose.model("Menu",Schema)
-
-module.exports = menu
+module.exports = { menu: menu };

@@ -1,34 +1,29 @@
-const mongoose=require('mongoose')
+const mongoose = require('mongoose');
 const Schema = mongoose.Schema
 
-
-
-
 const shopSchema = new Schema({
+    name: { type: String, requied: true, trim: true },
+    photo: { type: String, default: "nopic.png" },
+    location: { lat: { type: Number }, lgn: { type: Number } },
 
-
-   name: {type: String,require: true,trim:true},
-   photo:{type:String,default:'nopic.png'},
-
-//   createdAt: {type: Date, default:Date.now},
-//   updateAt: {type: Date, default:Date.now}
+  },{
+    timestamps: true,
+    toJSON: { virtuals: true },
+    virtuals: {
+      menus: {
+        options: { ref: "Menu", localField: "_id", foreignField: "shopId" },
+  },
 },
-{
-    timestamps:true,
-    collection:"shops"
-}
+  },
 
+);
 
-,shopSchema.virtual('menus', {
-    ref: 'Menus',
-    localField: '_id',
-    foreignField: 'shop'
-  }));
+// shopSchema.virtual("menus", {
+//   ref: "Menu",
+//   localField: "_id",
+//   foreignField: "shopId",
+// });
 
+const shop = mongoose.model('Shop', shopSchema, 'shops');
 
-
-
-const shop = mongoose.model("Shop",shopSchema)
-
-
-module.exports = shop
+module.exports = { shop: shop};
