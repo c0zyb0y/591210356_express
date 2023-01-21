@@ -10,17 +10,21 @@ const { promisify } = require("util");
 const writeFileAsync = promisify(fs.writeFile);
 
 const index = async (req, res, next) => {
-    const shops = await shop.find().sort({ _id: "desc" });
-    const shopsWithPhotoDomain = shops.map((shop) => {
-      shop.photo = `${DOMAIN}/images/${shop.photo}`;
-      return {
-        id: shop._id,
-        name: shop.name,
-        photo: shop.photo,
-        location: shop.location,
-      };
-    });
-    return res.status(200).json({ data: shopsWithPhotoDomain });
+  const shops = await shop.find().sort({ _id: "desc" });
+	const shopsWithPhotoDomain = shops.map((shop) => {
+		if (shop.photo) {
+			shop.photo = `${DOMAIN}/images/${shop.photo}`;
+		} else {
+			shop.photo = `${DOMAIN}/images/nopic.png`;
+		}
+		return {
+			id: shop._id,
+			name: shop.name,
+			photo: shop.photo,
+			location: shop.location,
+		};
+	});
+	return res.status(200).json({ data: shopsWithPhotoDomain });
 };
 
 const getShop = async (req, res, next) => {
@@ -30,21 +34,23 @@ const getShop = async (req, res, next) => {
 };
 
 const getMenu = async (req, res, next) => {
-    const menus = await menu.find().populate('shopId');
+    //const menus = await menu.find().populate('shopId');
+    const menus = await menu.find().populate("shopId");
     return res.status(200).json({ data: menus });
   };
 
   const addShop = async (req, res, next) => {
     const { name, location, photo } = req.body;
-    let shopinsert = shop({
-      name: name,
-      location: location,
-      photo: await saveImageToDisk(photo),
-    });
-    const result = await shopinsert.save();
-    return res
-      .status(201)
-      .json({ message: `Insert Successful: ${(result != null)}` });
+	const photoName = photo ? await saveImageToDisk(photo) : undefined;
+	let shopinsert = shop({
+		name: name,
+		location: location,
+		photo: photoName,
+	});
+	const result = await shopinsert.save();
+	return res
+		.status(201)
+		.json({ message: `Insert Successful: ${result != null}` });
   };
   
   async function saveImageToDisk(baseImage) {
