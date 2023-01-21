@@ -1,118 +1,112 @@
-const Staff = require('../models/staff')
+const { ObjectId } = require("bson");
+const { staff } = require("../models/staff");
+const get = async (req, res, next) => {
+  const staffResult = await staff.find().sort({ _id: "desc" });
+  return res.status(200).json({ data: staffResult });
+};
 
+const post = async (req, res, next) => {
+  const { name, salary, photo } = req.body;
+  let staffinsert = staff({
+    name: name,
+    salary: salary,
+    photo: await saveImageToDisk(photo),
+  });
+  const result = await staffinsert.save();
+  return res
+    .status(200)
+    .json({ message: `Insert Successful: ${(result != null)}` });
+};
 
-exports.index = async (req, res, next) => {  //Show all data Func
-
-    const staff = await Staff.find().sort({ _id: -1 })
-
-    res.status(200).json({
-        data: staff
-    })
-}
-
-
-exports.show = async (req, res, next) => { //show by id Func
-
-    try {
-        const { id } = req.params
-
-        const staff = await Staff.findOne({
-            _id: id
-        })
-
-        if (!staff) {
-            throw new Error('ไม่พบผู้ใช้งาน')
-        } else {
-
-            res.status(200).json({
-                data: staff
-            })
-
-        }
-
-    } catch (error) {
-        res.status(400).json({
-            error: {
-                message: 'เกิดข้อผิดผลาด: ' + error.message
-            }
-        })
-
+const show = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const staffResult = await staff.findOne({ _id: new ObjectId(id) });
+    if (!staffResult) {
+      throw new Error("No Staff found");
     }
-}
+    return res.status(200).json({ data: staffResult });
+  } catch (e) {
+    return res.status(404).end(`Error: ${e.message}`);
+  }
+};
 
-
-exports.insert = async (req, res, next) => {  //Insert Func
-
-    const { name, salary } = req.body
-
-    let staff = new Staff({
-        name: name,
-        salary: salary,
-    });
-    await staff.save()
-
-    res.status(200).json({
-        message: "เพิ่มข้อมูลเรียบร้อยแล้ว"
-    })
-}
-
-
-
-exports.destroy = async (req, res, next) => { //Delete by id Func
-
-    try {
-        const { id } = req.params
-
-        const staff = await Staff.deleteOne({
-            _id: id
-        })
-
-        if (staff.deleteCount === 0) {
-            throw new Error('ไม่สามารถลบข้อมูลได้ ไม่พบข้อมูลผู้ใช้งาน')
-        } else {
-            res.status(200).json({
-                message: 'ลบข้อมูลเรียบร้อยแล้ว'
-            })
-        }
-    } catch (error) {
-        res.status(400).json({
-            error: {
-                message: 'เกิดข้อผิดผลาด: ' + error.message
-            }
-        })
-
+const remove = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const staffResult = await staff.deleteOne({ _id: new ObjectId(id) });
+    if (!staffResult.deletedCount) {
+      throw new Error("No Staff delete");
     }
-}
+    return res.status(200).json({ data: staffResult });
+  } catch (e) {
+    return res.status(404).end(`Error: ${e.message}`);
+  }
+};
 
-exports.update = async (req, res, next) => {  //Update Func
-
-    try {
-
-        const { id } = req.params
-        const { name, salary } = req.body
-
-        //const staff = await Staff.findById(id) ;
-        //staff.name = name
-        //staff.salary = salary
-        //await staff.save()
-
-        // const staff = await Staff.findByIdAndUpdate(id, {
-        //     name: name,
-        //     salary: salary
-        // })
-
-        const staff = await Staff.updateOne({_id : id}, {
-            name: name,
-            salary: salary
-        })
-
-        console.log(staff)
-
-        res.status(200).json({
-            message: "อัพเดทข้อมูลเรียบร้อยแล้ว"
-        })
-
-    } catch (error) {
-
+const update = async (req, res, next) => {
+  try {
+    const id = req.params.id;
+    const { name, salary } = req.body;
+    const staffupdate = await staff.updateOne(
+      { _id: new ObjectId(id) },
+      { name: name, salary: salary }
+    );
+    if (!staffupdate.modifiedCount) {
+      throw new Error("No Staff was modified");
     }
+    return res.status(200).json({ message: "Update Successful" });
+  } catch (e) {
+    return res.status(404).end(`Error: ${e.message}`);
+  }
+};
+
+async function saveImageToDisk(baseImage) {
+  //หา path จริงของโปรเจค
+  const projectPath = process.cwd();
+  //โฟลเดอร์และ path ของการอัปโหลด
+  const uploadPath = `${projectPath}/public/images/`;
+
+  //หานามสกุลไฟล์
+  const ext = baseImage.substring(
+    baseImage.indexOf("/") + 1,
+    baseImage.indexOf(";base64")
+  );
+
+  //สุ่มชื่อไฟล์ใหม่ พร้อมนามสกุล
+  let filename = "";
+  if (ext === "svg+xml") {
+    filename = `${uuidv4.v4()}.svg`;
+  } else {
+    filename = `${uuidv4.v4()}.${ext}`;
+  }
+
+  //Extract base64 data ออกมา
+  let image = decodeBase64Image(baseImage);
+
+  //เขียนไฟล์ไปไว้ที่ path
+  await writeFileAsync(uploadPath + filename, image.data, "base64");
+  //return ชื่อไฟล์ใหม่ออกไป
+  return filename;
 }
+
+function decodeBase64Image(base64Str) {
+  var matches = base64Str.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+  var image = {};
+  if (!matches || matches.length !== 3) {
+    throw new Error("Invalid base64 string");
+  }
+
+  image.type = matches[1];
+  image.data = matches[2];
+
+  return image;
+}
+
+module.exports = {
+  staff: get,
+  insert: post,
+  show: show,
+  remove: remove,
+  update: update,
+};
